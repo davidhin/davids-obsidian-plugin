@@ -65,19 +65,19 @@ export async function hello(): Promise<number> {
 	let incompleteSection: string = "";
 	for (let file of filteredFiles) {
 		let fileContents: string = await vault.cachedRead(file);
-		let sections = [...parseMarkdown(fileContents)].filter(([k, v]) =>
-			k.includes(currFilename)
-		);
+		let sections = [...parseMarkdown(fileContents)];
 		let lines: string[] = fileContents.split(/\r?\n/);
 		let allComplete: string[] = [];
 		let allIncomplete: string[] = [];
 		for (let section of sections) {
 			let sectionLines = lines.slice(section[1][0], section[1][1]);
-			let complete = sectionLines.filter((line) => line.includes("- [x]"));
+			if (section[0].includes(currFilename)) {
+				let complete = sectionLines.filter((line) => line.includes("- [x]"));
+				complete = complete.map((x) => `    ${x}\n`);
+				allComplete = [...allComplete, ...complete];
+			}
 			let incomplete = sectionLines.filter((line) => line.includes("- [ ]"));
-			complete = complete.map((x) => `    ${x}\n`);
 			incomplete = incomplete.map((x) => `    ${x}\n`);
-			allComplete = [...allComplete, ...complete];
 			allIncomplete = [...allIncomplete, ...incomplete];
 		}
 		if (allComplete.length > 0) {
