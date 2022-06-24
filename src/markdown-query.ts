@@ -81,6 +81,9 @@ export async function hello(): Promise<number> {
 				allComplete = [...allComplete, ...complete];
 			}
 			let incomplete = sectionLines.filter((line) => line.includes("- [ ]"));
+			if (section[0].includes(currFilename)) {
+				incomplete = incomplete.map((x) => `- [ ] **${x.slice(6)}**`);
+			}
 			incomplete = incomplete.map((x) => `    ${x}\n`);
 			allIncomplete = [...allIncomplete, ...incomplete];
 		}
