@@ -52,7 +52,11 @@ export async function hello(): Promise<number> {
 	const { vault } = this.app;
 
 	let filteredFiles = files.filter((file) => {
-		if (!file.path.includes("002_Projects")) return false;
+		if (
+			!file.path.includes("002_Projects") &&
+			!file.path.includes("005_Personal")
+		)
+			return false;
 		const fileCache = cache.getFileCache(file);
 		const links = new Set(fileCache["links"]?.map((link) => link.link));
 		const tags = new Set(fileCache["tags"]?.map((tags) => tags.tag));
