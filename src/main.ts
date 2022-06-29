@@ -2,6 +2,8 @@ import { moment, Plugin, MarkdownView, Editor } from "obsidian";
 import { hello } from "./markdown-query";
 
 export default class ExamplePlugin extends Plugin {
+	statusBar: HTMLElement;
+
 	async onload() {
 		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 		const saveCommandDefinition = (this.app as any).commands?.commands?.[
@@ -17,6 +19,17 @@ export default class ExamplePlugin extends Plugin {
 				save();
 			},
 		});
+
+		// Clock
+		this.statusBar = this.addStatusBarItem();
+		this.updateStatusBar();
+		this.registerInterval(
+		  window.setInterval(() => this.updateStatusBar(), 1000)
+		);
+	}
+
+	updateStatusBar() {
+		this.statusBar.setText(moment().format("h:mm:s A"));
 	}
 
 	async averageFileLength(): Promise<number> {
