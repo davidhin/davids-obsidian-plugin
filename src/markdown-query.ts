@@ -1,9 +1,4 @@
-import {
-	Editor,
-	MarkdownView,
-	MetadataCache,
-	TFile,
-} from "obsidian";
+import { Editor, MarkdownView, MetadataCache, TFile } from "obsidian";
 
 function parseMarkdown(md: string): Map<string, [number, number]> {
 	let lines: string[] = md.split(/\r?\n/);
@@ -76,13 +71,23 @@ export async function hello(): Promise<number> {
 		for (let section of sections) {
 			let sectionLines = lines.slice(section[1][0], section[1][1]);
 			if (section[0].includes(currFilename)) {
-				let complete = sectionLines.filter((line) => line.includes("- [x]"));
+				let complete = sectionLines.filter((line) =>
+					line.includes("- [x]")
+				);
 				complete = complete.map((x) => `    ${x}\n`);
 				allComplete = [...allComplete, ...complete];
 			}
-			let incomplete = sectionLines.filter((line) => line.includes("- [ ]"));
+			let incomplete = sectionLines.filter((line) =>
+				line.includes("- [ ]")
+			);
+			// Bold today's incomplete (with nesting)
 			if (section[0].includes(currFilename)) {
-				incomplete = incomplete.map((x) => `- [ ] **${x.slice(6)}**`);
+				incomplete = incomplete.map(
+					(x) =>
+						`${x.slice(0, x.indexOf("]") + 1)} **${
+							x.split("[ ] ")[1]
+						}**`
+				);
 			}
 			incomplete = incomplete.map((x) => `    ${x}\n`);
 			allIncomplete = [...allIncomplete, ...incomplete];
