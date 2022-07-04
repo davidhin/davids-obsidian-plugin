@@ -29,7 +29,22 @@ function replaceSection(
 	let md: string = editor.getValue();
 	let sections: Map<string, [number, number]> = parseMarkdown(md);
 	if (sections.has(sectionName)) {
+		let headerLevel = "";
 		let [start, end]: [number, number] = sections.get(sectionName);
+		for (let section of sections.entries()) {
+			if (section[0] === sectionName) {
+				headerLevel = section[0].split(" ")[0];
+				continue;
+			}
+			if (headerLevel !== "") {
+				if (section[0].split(" ")[0].length > headerLevel.length) {
+					end = section[1][1];
+				} else {
+					end = section[1][0];
+					break;
+				}
+			}
+		}
 		let newSection: string = sectionName + "\n" + content + "\n";
 		editor.replaceRange(
 			newSection,
@@ -61,7 +76,7 @@ export async function hello(): Promise<number> {
 
 	// Build Contents
 	let completeSection: string = "";
-	let incompleteSection: string = "";
+	let incompleteSection: Map<string, string> = new Map();
 	for (let file of filteredFiles) {
 		let fileContents: string = await vault.cachedRead(file);
 		let sections = [...parseMarkdown(fileContents)];
@@ -96,11 +111,33 @@ export async function hello(): Promise<number> {
 			completeSection += `- [[${file.basename}]]\n`;
 			completeSection += allComplete.join("");
 		}
-		incompleteSection += `- [[${file.basename}]]\n`;
-		incompleteSection += allIncomplete.join("");
+		let tags = cache
+			.getFileCache(file)
+			.tags.filter((tag) => tag.tag !== "#wip" && tag.tag !== "#todo");
+		let joined_tag_string = "#default";
+		if (tags.length > 0) {
+			let joined_tags = tags.map((tag) => tag.tag);
+			joined_tags.sort();
+			joined_tag_string = joined_tags.join(", ");
+		}
+		let existing = incompleteSection.get(joined_tag_string) || "";
+		incompleteSection.set(
+			joined_tag_string,
+			existing + `- [[${file.basename}]]\n` + allIncomplete.join("")
+		);
 	}
+	let finalIncompleteSection = "";
+	let sorted_keys = [...incompleteSection.keys()].filter(
+		(x: string) => x !== "#default"
+	);
+	sorted_keys.push("#default");
+	sorted_keys.sort();
+	sorted_keys.forEach((tag) => {
+		finalIncompleteSection += `\n### ${tag}\n\n`;
+		finalIncompleteSection += incompleteSection.get(tag);
+	});
 
 	replaceSection(view.editor, "## `complete`", completeSection);
-	replaceSection(view.editor, "## `incomplete`", incompleteSection);
+	replaceSection(view.editor, "## `incomplete`", finalIncompleteSection);
 	return 1;
 }
