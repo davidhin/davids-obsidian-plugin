@@ -133,8 +133,10 @@ export async function hello(): Promise<number> {
 	sorted_keys.push("#default");
 	sorted_keys.sort();
 	sorted_keys.forEach((tag) => {
-		finalIncompleteSection += `\n### ${tag}\n\n`;
-		finalIncompleteSection += incompleteSection.get(tag);
+		if (incompleteSection.get(tag) !== undefined) {
+			finalIncompleteSection += `\n### ${tag}\n\n`;
+			finalIncompleteSection += incompleteSection.get(tag);
+		}
 	});
 
 	replaceSection(view.editor, "## `complete`", completeSection);
