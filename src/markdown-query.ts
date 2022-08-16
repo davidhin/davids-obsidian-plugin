@@ -113,9 +113,9 @@ export async function hello(): Promise<number> {
 		}
 		let tags = cache
 			.getFileCache(file)
-			.tags.filter((tag) => tag.tag !== "#wip" && tag.tag !== "#todo");
+			.tags?.filter((tag) => tag.tag !== "#wip" && tag.tag !== "#todo");
 		let joined_tag_string = "#default";
-		if (tags.length > 0) {
+		if (tags?.length > 0) {
 			let joined_tags = tags.map((tag) => tag.tag);
 			joined_tags.sort();
 			joined_tag_string = joined_tags.join(", ");
