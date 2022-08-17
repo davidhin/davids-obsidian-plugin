@@ -156,7 +156,10 @@ export async function hello(): Promise<number> {
 		if (links.size > 0) {
 			for (let link of links) {
 				let taskMoment = moment(link, "DD_MMMM_YYYY");
-				if (taskMoment.isValid()) {
+				// Link includes _ is a workaround to ensure that we are not
+				// parsing random dates in links, but means our dates must be
+				// formatted with an underscore.
+				if (taskMoment.isValid() && link.includes("_")) {
 					let taskDate = taskMoment.format("MMMM YYYY");
 					if (!finishedIndex.has(taskDate)) {
 						finishedIndex.set(taskDate, new Set());
