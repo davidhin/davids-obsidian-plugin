@@ -1,4 +1,4 @@
-import { Editor, MarkdownView, MetadataCache, TFile } from "obsidian";
+import { Editor, MarkdownView, MetadataCache, TFile, moment } from "obsidian";
 
 function parseMarkdown(md: string): Map<string, [number, number]> {
 	let lines: string[] = md.split(/\r?\n/);
@@ -141,5 +141,45 @@ export async function hello(): Promise<number> {
 
 	replaceSection(view.editor, "## `complete`", completeSection);
 	replaceSection(view.editor, "## `incomplete`", finalIncompleteSection);
+
+	// Build Index under ## `task_index`
+	let finishedIndex: Map<string, Set<string>> = new Map();
+	files.filter((file) => {
+		if (
+			!file.path.includes("002_Projects") &&
+			!file.path.includes("005_Personal")
+		)
+			return false;
+		const fileCache = cache.getFileCache(file);
+		const links = new Set(fileCache["links"]?.map((link) => link.link));
+		const tags = new Set(fileCache["tags"]?.map((tags) => tags.tag));
+		if (links.size > 0) {
+			for (let link of links) {
+				let taskMoment = moment(link, "DD_MMMM_YYYY");
+				if (taskMoment.isValid()) {
+					let taskDate = taskMoment.format("MMMM YYYY");
+					if (!finishedIndex.has(taskDate)) {
+						finishedIndex.set(taskDate, new Set());
+					}
+					let dotpoint = `- [[${file.basename}]]`;
+					if (tags.size > 0) {
+						dotpoint += ` ${Array.from(tags).join(", ")}`;
+					}
+					finishedIndex.get(taskDate).add(dotpoint);
+				}
+			}
+		}
+	});
+	let sorted_date_keys = [...finishedIndex.keys()].sort((a, b) =>
+		moment(a, "MMMM YYYY").diff(moment(b, "MMMM YYYY"))
+	);
+	let task_index = "";
+	for (let date of sorted_date_keys) {
+		task_index += `\n### ${date}\n`;
+		task_index += Array.from(finishedIndex.get(date)).join("\n");
+		task_index += "\n";
+	}
+	replaceSection(view.editor, "## `task_index`", task_index);
+
 	return 1;
 }
