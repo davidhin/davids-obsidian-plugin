@@ -147,7 +147,7 @@ export async function hello(): Promise<number> {
 	files.filter((file) => {
 		if (
 			!file.path.includes("002_Projects") &&
-			!file.path.includes("005_Personal")
+			!file.path.includes("003_Personal")
 		)
 			return false;
 		const fileCache = cache.getFileCache(file);
