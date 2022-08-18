@@ -138,6 +138,14 @@ export async function hello(): Promise<number> {
 	);
 	sorted_keys.push("#default");
 	sorted_keys.sort();
+
+	// If #priority is present, put at start of array
+	let priority_key = sorted_keys.find((x) => x.includes("#priority"));
+	if (priority_key) {
+		sorted_keys.splice(sorted_keys.indexOf(priority_key), 1);
+		sorted_keys.unshift(priority_key);
+	}
+
 	sorted_keys.forEach((tag) => {
 		if (incompleteSection.get(tag) !== undefined) {
 			finalIncompleteSection += `\n### ${tag}\n\n`;
