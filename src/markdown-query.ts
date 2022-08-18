@@ -127,12 +127,11 @@ export async function hello(): Promise<number> {
 			joined_tag_string = joined_tags.join(", ");
 		}
 		let existing = incompleteSection.get(joined_tag_string) || "";
-		if (allIncomplete.length > 0) {
-			incompleteSection.set(
-				joined_tag_string,
-				existing + `- [[${file.basename}]]\n` + allIncomplete.join("")
-			);
-		}
+		if (file.basename === "Priority" && allIncomplete.length == 0) continue;
+		incompleteSection.set(
+			joined_tag_string,
+			existing + `- [[${file.basename}]]\n` + allIncomplete.join("")
+		);
 	}
 	let finalIncompleteSection = "";
 	let sorted_keys = [...incompleteSection.keys()].filter(
