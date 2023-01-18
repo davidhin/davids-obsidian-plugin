@@ -60,29 +60,16 @@ export async function hello(): Promise<number> {
 	let currFilename: string = this.app.workspace.getActiveFile().basename;
 	const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 	const { vault } = this.app;
-
-	let filteredFiles = files.filter((file) => {
-		if (
-			!file.path.includes("002_Projects") &&
-			!file.path.includes("003_Personal")
-		)
-			return false;
-		const fileCache = cache.getFileCache(file);
-		const links = new Set(fileCache["links"]?.map((link) => link.link));
-		const tags = new Set(fileCache["tags"]?.map((tags) => tags.tag));
-		if (
-			file.basename === "Index" ||
-			(!links.has(currFilename) &&
-				!tags.has("#wip") &&
-				!tags.has("#waiting"))
-		)
-			return false;
-		return true;
-	});
+	let filteredFiles = files;
 
 	// Build Contents
 	let completeSection: string = "";
 	let incompleteSection: Map<string, string> = new Map();
+
+	let incompletePast: Map<string, string> = new Map();
+	let incompletePresent: Map<string, string> = new Map();
+	let incompleteFuture: Map<string, string> = new Map();
+
 	for (let file of filteredFiles) {
 		let fileContents: string = await vault.cachedRead(file);
 		let sections = [...parseMarkdown(fileContents)];
@@ -101,14 +88,21 @@ export async function hello(): Promise<number> {
 			let incomplete = sectionLines.filter((line) =>
 				line.includes("- [ ]")
 			);
-			// Bold today's incomplete (with nesting)
-			if (section[0].includes(currFilename)) {
-				incomplete = incomplete.map(
-					(x) =>
-						`${x.slice(0, x.indexOf("]") + 1)} **${
-							x.split("[ ] ")[1]
-						}**`
-				);
+			let section_date = moment(section[0], "DD-MMM-YYYY");
+			let curr_date = moment(currFilename, "DD-MMM-YYYY");
+			let incomplete_map = incomplete.map((x) => `    ${x}\n`).join("");
+			if (section_date.isBefore(curr_date) && incomplete.length > 0) {
+				incompletePast.set(file.basename, incomplete_map);
+			} else if (
+				section_date.isSame(curr_date) &&
+				incomplete.length > 0
+			) {
+				incompletePresent.set(file.basename, incomplete_map);
+			} else if (
+				section_date.isAfter(curr_date) &&
+				incomplete.length > 0
+			) {
+				incompleteFuture.set(file.basename, "");
 			}
 			incomplete = incomplete.map((x) => `    ${x}\n`);
 			allIncomplete = [...allIncomplete, ...incomplete];
@@ -117,22 +111,31 @@ export async function hello(): Promise<number> {
 			completeSection += `- [[${file.basename}]]\n`;
 			completeSection += allComplete.join("");
 		}
-		let tags = cache
-			.getFileCache(file)
-			.tags?.filter((tag) => tag.tag !== "#wip" && tag.tag !== "#todo");
-		let joined_tag_string = "#default";
-		if (tags?.length > 0) {
-			let joined_tags = tags.map((tag) => tag.tag);
-			joined_tags.sort();
-			joined_tag_string = joined_tags.join(", ");
-		}
-		let existing = incompleteSection.get(joined_tag_string) || "";
-		if (file.basename === "Priority" && allIncomplete.length == 0) continue;
-		incompleteSection.set(
-			joined_tag_string,
-			existing + `- [[${file.basename}]]\n` + allIncomplete.join("")
-		);
 	}
+
+	// Flatten incompletePresent into string
+	let incompletePresentString = "";
+	incompletePresent.forEach((value, key) => {
+		incompletePresentString += `- [[${key}]]\n${value}`;
+	});
+
+	// Flatten incompletePast into string
+	let incompletePastString = "";
+	incompletePast.forEach((value, key) => {
+		incompletePastString += `- [[${key}]]\n${value}`;
+	});
+
+	// Flatten incompleteFuture into string
+	let incompleteFutureString = "";
+	incompleteFuture.forEach((value, key) => {
+		incompleteFutureString += `- [[${key}]]\n${value}`;
+	});
+
+	incompleteSection.set("#current", incompletePresentString);
+	if (incompletePastString.length > 0)
+		incompleteSection.set("#past", incompletePastString);
+	incompleteSection.set("#future", incompleteFutureString);
+
 	let finalIncompleteSection = "";
 	let sorted_keys = [...incompleteSection.keys()].filter(
 		(x: string) => x !== "#default"
@@ -154,6 +157,9 @@ export async function hello(): Promise<number> {
 		}
 	});
 
+	if (completeSection.length > 0) {
+		completeSection = `\n${completeSection}`;
+	}
 	replaceSection(view.editor, "## `complete`", completeSection);
 	replaceSection(view.editor, "## `incomplete`", finalIncompleteSection);
 
