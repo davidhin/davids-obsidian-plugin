@@ -166,11 +166,8 @@ export async function hello(): Promise<number> {
 	// Build Index under ## `task_index`
 	let finishedIndex: Map<string, Set<string>> = new Map();
 	files.filter((file) => {
-		if (
-			!file.path.includes("002_Projects") &&
-			!file.path.includes("003_Personal")
-		)
-			return false;
+		if (file.path.includes("daily_logs")) return false;
+		if (file.path.includes("documents/Index")) return false;
 		const fileCache = cache.getFileCache(file);
 		const links = new Set(fileCache["links"]?.map((link) => link.link));
 		const tags = new Set(fileCache["tags"]?.map((tags) => tags.tag));
@@ -198,7 +195,7 @@ export async function hello(): Promise<number> {
 		moment(a, "MMMM YYYY").diff(moment(b, "MMMM YYYY"))
 	);
 	let task_index = "";
-	for (let date of sorted_date_keys) {
+	for (let date of sorted_date_keys.reverse()) {
 		task_index += `\n### ${date}\n`;
 		task_index += Array.from(finishedIndex.get(date)).join("\n");
 		task_index += "\n";
